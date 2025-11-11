@@ -546,36 +546,38 @@ namespace OWASP.WebGoat.NET.App_Code.DB
             string output = "";
             try
             {
-            
+
                 using (SqliteConnection connection = new SqliteConnection(_connectionString))
                 {
                     connection.Open();
 
-                    string sql = "select email from CustomerLogin where customerNumber = " + num;
+                    string sql = "select email from CustomerLogin where customerNumber = @customerNumber";
                     SqliteCommand cmd = new SqliteCommand(sql, connection);
+                    cmd.Parameters.AddWithValue("@customerNumber", num);
                     output = (string)cmd.ExecuteScalar();
                 }
-                
+
             }
             catch (Exception ex)
             {
                 log.Error("Error getting email by customer number", ex);
                 output = ex.Message;
             }
-            
+
             return output;
         }
 
         public DataSet GetCustomerEmails(string email)
         {
-            string sql = "select email from CustomerLogin where email like '" + email + "%'";
-            
-            
+            string sql = "select email from CustomerLogin where email like @email";
+
+
             using (SqliteConnection connection = new SqliteConnection(_connectionString))
             {
                 connection.Open();
 
                 SqliteDataAdapter da = new SqliteDataAdapter(sql, connection);
+                da.SelectCommand.Parameters.AddWithValue("@email", email + "%");
                 DataSet ds = new DataSet();
                 da.Fill(ds);
 
