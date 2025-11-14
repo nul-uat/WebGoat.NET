@@ -70,23 +70,40 @@ namespace OWASP.WebGoat.NET
 			RunSQLFromFile (cn, filename);
 		}
 		
-		private string DoNonQuery (String SQL, SqliteConnection conn)
-		{
-			var cmd = new SqliteCommand (SQL, conn);
-			var output = string.Empty;
-			
-			try {
-				cmd.ExecuteNonQuery ();
-				output += "<br/>SQL Executed: " + SQL;
-			} catch (SqliteException ex) {
-				output += "<br/>SQL Exception: " + ex.Message;
-				output += SQL;
-			} catch (Exception ex) {
-				output += "<br/>Exception: " + ex.Message;
-				output += SQL;
-			}
-			return output;
+	private string DoNonQuery (String SQL, SqliteConnection conn)
+	{
+		var cmd = new SqliteCommand (SQL, conn);
+		var output = string.Empty;
+		
+		try {
+			cmd.ExecuteNonQuery ();
+			output += "<br/>SQL Executed: " + SQL;
+		} catch (SqliteException ex) {
+			output += "<br/>SQL Exception: " + ex.Message;
+			output += SQL;
+		} catch (Exception ex) {
+			output += "<br/>Exception: " + ex.Message;
+			output += SQL;
 		}
+		return output;
+	}
+	
+	private string DoNonQuery (SqliteCommand cmd, SqliteConnection conn)
+	{
+		var output = string.Empty;
+		
+		try {
+			cmd.ExecuteNonQuery ();
+			output += "<br/>SQL Executed: " + cmd.CommandText;
+		} catch (SqliteException ex) {
+			output += "<br/>SQL Exception: " + ex.Message;
+			output += cmd.CommandText;
+		} catch (Exception ex) {
+			output += "<br/>Exception: " + ex.Message;
+			output += cmd.CommandText;
+		}
+		return output;
+	}
 		
 		private string DoScalar (String SQL, SqliteConnection conn)
 		{
@@ -141,10 +158,15 @@ namespace OWASP.WebGoat.NET
 			return result;
 		}
 		*/
-		private DataTable DoQuery (string SQL, SqliteConnection conn)
-		{
-			var cmd = new SqliteCommand (SQL, conn);
-			DataTable dt = new DataTable ();
+	private DataTable DoQuery (string SQL, SqliteConnection conn)
+	{
+		var cmd = new SqliteCommand (SQL, conn);
+		return DoQuery (cmd, conn);
+	}
+	
+	private DataTable DoQuery (SqliteCommand cmd, SqliteConnection conn)
+	{
+		DataTable dt = new DataTable ();
 			using (var reader = cmd.ExecuteReader ()) {
 				
 				// Add all the columns.
@@ -197,30 +219,45 @@ namespace OWASP.WebGoat.NET
 			return dt;
 		}
 		
-		public string GetEmailByUserID (string userid)
-		{
-			if (userid.Length > 4)
-				userid = userid.Substring (0, 4);
-			String output = (String)DoScalar ("SELECT Email FROM UserList WHERE UserID = '" + userid + "'", GetGoatDBConnection ());
+	public string GetEmailByUserID (string userid)
+	{
+		if (userid.Length > 4)
+			userid = userid.Substring (0, 4);
+		// Use parameterized query to prevent SQL injection
+		using (var cmd = new SqliteCommand ("SELECT Email FROM UserList WHERE UserID = @userid", GetGoatDBConnection ())) {
+			cmd.Parameters.AddWithValue ("@userid", userid);
+			object result = cmd.ExecuteScalar ();
+			String output = result != null ? (String)result : null;
 			if (output != null)
 				return output;
 			else 
 				return "Email for userid: " + userid + " not found<p/>";
 		}
+	}
 
-		public DataTable GetMailingListInfoByEmailAddress (string email)
-		{
-			string sql = "SELECT FirstName, LastName, Email FROM MailingList where Email = '" + email + "'";
-			DataTable result = DoQuery (sql, GetGoatDBConnection ());
+	public DataTable GetMailingListInfoByEmailAddress (string email)
+	{
+		// Use parameterized query to prevent SQL injection
+		string sql = "SELECT FirstName, LastName, Email FROM MailingList where Email = @email";
+		using (var cmd = new SqliteCommand (sql, GetGoatDBConnection ())) {
+			cmd.Parameters.AddWithValue ("@email", email);
+			DataTable result = DoQuery (cmd, GetGoatDBConnection ());
 			return result;
 		}
+	}
 
-		public string AddToMailingList (string first, string last, string email)
-		{
-			string sql = "insert into mailinglist (firstname, lastname, email) values ('" + first + "', '" + last + "', '" + email + "')";
-			string result = DoNonQuery (sql, GetGoatDBConnection ());
+	public string AddToMailingList (string first, string last, string email)
+	{
+		// Use parameterized query to prevent SQL injection
+		string sql = "insert into mailinglist (firstname, lastname, email) values (@first, @last, @email)";
+		using (var cmd = new SqliteCommand (sql, GetGoatDBConnection ())) {
+			cmd.Parameters.AddWithValue ("@first", first);
+			cmd.Parameters.AddWithValue ("@last", last);
+			cmd.Parameters.AddWithValue ("@email", email);
+			string result = DoNonQuery (cmd, GetGoatDBConnection ());
 			return result;
 		}
+	}
 
 		public DataTable GetAllPostings ()
 		{
@@ -229,12 +266,18 @@ namespace OWASP.WebGoat.NET
 			return result;
 		}
 
-		public string AddNewPosting (String title, String email, String message)
-		{
-			string sql = "insert into Postings(title, email, message) values ('" + title + "','" + email + "','" + message + "')";
-			string result = DoNonQuery (sql, GetGoatDBConnection ());
+	public string AddNewPosting (String title, String email, String message)
+	{
+		// Use parameterized query to prevent SQL injection
+		string sql = "insert into Postings(title, email, message) values (@title, @email, @message)";
+		using (var cmd = new SqliteCommand (sql, GetGoatDBConnection ())) {
+			cmd.Parameters.AddWithValue ("@title", title);
+			cmd.Parameters.AddWithValue ("@email", email);
+			cmd.Parameters.AddWithValue ("@message", message);
+			string result = DoNonQuery (cmd, GetGoatDBConnection ());
 			return result;
 		}
+	}
 
 		public DataTable GetPostingLinks ()
 		{
@@ -242,12 +285,16 @@ namespace OWASP.WebGoat.NET
 			DataTable result = DoQuery (sql, GetGoatDBConnection ());
 			return result;
 		}
-		public DataTable GetPostingByID(int id)
-		{
-			string sql = "SELECT Title, Email, Message FROM Postings where PostingID=" + id;
-			DataTable result = DoQuery (sql, GetGoatDBConnection ());
+	public DataTable GetPostingByID(int id)
+	{
+		// Use parameterized query to prevent SQL injection
+		string sql = "SELECT Title, Email, Message FROM Postings where PostingID = @id";
+		using (var cmd = new SqliteCommand (sql, GetGoatDBConnection ())) {
+			cmd.Parameters.AddWithValue ("@id", id);
+			DataTable result = DoQuery (cmd, GetGoatDBConnection ());
 			return result;
 		}
+	}
 		
 	}
 }
