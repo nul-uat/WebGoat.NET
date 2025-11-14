@@ -5,7 +5,7 @@ using log4net;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
-using System.Threading; // here hiihihuuhhu
+using System.Threading;
 
 namespace OWASP.WebGoat.NET.App_Code.DB
 {
