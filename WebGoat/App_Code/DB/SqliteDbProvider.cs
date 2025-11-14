@@ -575,7 +575,9 @@ namespace OWASP.WebGoat.NET.App_Code.DB
                     string sql = "select email from CustomerLogin where customerNumber = @customerNumber";
                     SqliteCommand cmd = new SqliteCommand(sql, connection);
                     cmd.Parameters.AddWithValue("@customerNumber", num);
-                    output = (string)cmd.ExecuteScalar();
+                    object result = cmd.ExecuteScalar();
+                    if (result != null)
+                        output = result.ToString();
                 }
 
             }
