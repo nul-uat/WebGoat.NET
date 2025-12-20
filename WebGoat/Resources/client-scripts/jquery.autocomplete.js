@@ -8,7 +8,7 @@
 *  Last Review: 04/19/2010
 */
 
-/*jslint onevar: true, evil: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true */
+/*jslint onevar: true, evil: false, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true */
 /*global window: true, document: true, clearInterval: true, setInterval: true, jQuery: true */
 
 (function($) {
@@ -285,7 +285,7 @@
     processResponse: function(text) {
       var response;
       try {
-        response = eval('(' + text + ')');
+        response = JSON.parse(text);
       } catch (err) { return; }
       if (!$.isArray(response.data)) { response.data = []; }
       if(!this.options.noCache){
