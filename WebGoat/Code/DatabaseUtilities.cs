@@ -72,12 +72,13 @@ namespace OWASP.WebGoat.NET
 		
 	private string DoNonQuery (String SQL, SqliteConnection conn)
 	{
-		var cmd = new SqliteCommand (SQL, conn);
 		var output = string.Empty;
 		
 		try {
-			cmd.ExecuteNonQuery ();
-			output += "<br/>SQL Executed: " + SQL;
+			using (var cmd = new SqliteCommand (SQL, conn)) {
+				cmd.ExecuteNonQuery ();
+				output += "<br/>SQL Executed: " + SQL;
+			}
 		} catch (SqliteException ex) {
 			output += "<br/>SQL Exception: " + ex.Message;
 			output += SQL;
@@ -107,11 +108,12 @@ namespace OWASP.WebGoat.NET
 		
 		private string DoScalar (String SQL, SqliteConnection conn)
 		{
-			var cmd = new SqliteCommand (SQL, conn);
 			var output = string.Empty;
 			
 			try {
-				output = (string)cmd.ExecuteScalar ();
+				using (var cmd = new SqliteCommand (SQL, conn)) {
+					output = (string)cmd.ExecuteScalar ();
+				}
 			} catch (SqliteException ex) {
 				output += "<br/>SQL Exception: " + ex.Message + " - ";
 				output += SQL;
@@ -160,8 +162,9 @@ namespace OWASP.WebGoat.NET
 		*/
 	private DataTable DoQuery (string SQL, SqliteConnection conn)
 	{
-		var cmd = new SqliteCommand (SQL, conn);
-		return DoQuery (cmd, conn);
+		using (var cmd = new SqliteCommand (SQL, conn)) {
+			return DoQuery (cmd, conn);
+		}
 	}
 	
 	private DataTable DoQuery (SqliteCommand cmd, SqliteConnection conn)
