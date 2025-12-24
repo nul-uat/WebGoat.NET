@@ -47,7 +47,7 @@ namespace OWASP.WebGoat.NET.App_Code
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 // Windows: case-insensitive comparison for shell interpreters
-                blockedExecutables = new[] { "cmd.exe", "powershell.exe", "cmd", "powershell", 
+                blockedExecutables = new[] { "cmd.exe", "powershell.exe", "pwsh.exe", "cmd", "powershell", "pwsh",
                                             "cscript.exe", "wscript.exe", "mshta.exe", "bash.exe", 
                                             "sh.exe", "ksh.exe", "zsh.exe" };
                  
@@ -62,12 +62,12 @@ namespace OWASP.WebGoat.NET.App_Code
             }
             else
             {
-                // Unix/Linux: case-sensitive comparison for shell interpreters
+                // Unix/Linux: case-insensitive comparison for shell interpreters to handle case-insensitive filesystems like macOS
                 blockedExecutables = new[] { "sh", "bash", "zsh", "ksh", "csh", "tcsh", "ash", "dash" };
-                 
+                  
                 foreach (var blocked in blockedExecutables)
                 {
-                    if (string.Equals(fileName, blocked, StringComparison.Ordinal))
+                    if (string.Equals(fileName, blocked, StringComparison.OrdinalIgnoreCase))
                     {
                         log.Warn(string.Format("Blocked shell interpreter executable: {0}", fileName));
                         return false;
