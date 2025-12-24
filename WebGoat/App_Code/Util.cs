@@ -40,6 +40,41 @@ namespace OWASP.WebGoat.NET.App_Code
                 return false;
             }
 
+            // Block known shell interpreters to prevent attackers from using them as the executable
+            string fileName = Path.GetFileName(executablePath);
+            string[] blockedExecutables;
+             
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                // Windows: case-insensitive comparison for shell interpreters
+                blockedExecutables = new[] { "cmd.exe", "powershell.exe", "cmd", "powershell", 
+                                            "cscript.exe", "wscript.exe", "mshta.exe", "bash.exe", 
+                                            "sh.exe", "ksh.exe", "zsh.exe" };
+                 
+                foreach (var blocked in blockedExecutables)
+                {
+                    if (string.Equals(fileName, blocked, StringComparison.OrdinalIgnoreCase))
+                    {
+                        log.Warn(string.Format("Blocked shell interpreter executable: {0}", fileName));
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                // Unix/Linux: case-sensitive comparison for shell interpreters
+                blockedExecutables = new[] { "sh", "bash", "zsh", "ksh", "csh", "tcsh", "ash", "dash" };
+                 
+                foreach (var blocked in blockedExecutables)
+                {
+                    if (string.Equals(fileName, blocked, StringComparison.Ordinal))
+                    {
+                        log.Warn(string.Format("Blocked shell interpreter executable: {0}", fileName));
+                        return false;
+                    }
+                }
+            }
+
             return true;
         }
         
